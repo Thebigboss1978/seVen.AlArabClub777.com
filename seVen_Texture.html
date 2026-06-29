@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>تجربة نطق الصوت</title>
+</head>
+<body>
+
+    <h1>مستعرض نطق النصوص التلقائي</h1>
+    
+    <!-- مربع نص لكتابة ما تريد منطقه -->
+    <textarea id="textToSpeak" rows="4" cols="50">مرحباً بك، هذا النص سيتم نطقه بأفضل صوت متاح على جهازك الحالي.</textarea>
+    <br><br>
+    
+    <!-- زر لتشغيل الكود عند الضغط عليه -->
+    <button onclick="startSpeaking()">اضغط هنا للنطق</button>
+
+    <script>
+    function startSpeaking() {
+        // جلب النص المكتوب داخل المربع
+        const text = document.getElementById("textToSpeak").value;
+
+        if (!('speechSynthesis' in window)) {
+            alert("هذا المتصفح لا يدعم نطق الكلمات.");
+            return;
+        }
+
+        const voices = window.speechSynthesis.getVoices();
+        
+        // تصفية وترتيب الأصوات العربية بناءً على جودة نظام التشغيل
+        const arabicVoices = voices.filter(voice => voice.lang.startsWith('ar'))
+            .sort((a, b) => {
+                const priority = (name) => {
+                    name = name.toLowerCase();
+                    if (name.includes('premium') || name.includes('enhanced')) return 4;
+                    if (name.includes('apple') || name.includes('google')) return 3;
+                    if (name.includes('microsoft')) return 2;
+                    return 1;
+                };
+                return priority(b.name) - priority(a.name);
+            });
+
+        const utterance = new SpeechSynthesisUtterance(text);
+
+        if (arabicVoices.length > 0) {
+            utterance.voice = arabicVoices[0]; // اختيار الصوت الأول (الأعلى أولوية)
+            utterance.lang = arabicVoices[0].lang;
+        } else {
+            utterance.lang = 'ar-SA'; // حل احتياطي في حال عدم التعرف
+        }
+
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+
+        window.speechSynthesis.speak(utterance);
+    }
+
+    // تفعيل جلب الأصوات مسبقاً في متصفحات الكروم والأندرويد
+    if (typeof speechSynthesis !== 'undefined' && speechSynthesis.onvoiceschanged !== undefined) {
+        speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+    }
+    </script>
+
+</body>
+</html>
