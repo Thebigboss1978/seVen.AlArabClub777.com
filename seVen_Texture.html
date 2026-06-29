@@ -2,64 +2,156 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>تجربة نطق الصوت</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>seVen - مستعرض نطق النصوص التلقائي</title>
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: #111827;
+            --accent-color: #ffd700; /* لون الجوكر الذهبي */
+            --text-main: #f3f4f6;
+            --border-color: #1f2937;
+        }
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background: var(--card-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        h1 {
+            color: var(--accent-color);
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 25px;
+            letter-spacing: 2px;
+            border-bottom: 1px dashed var(--border-color);
+            padding-bottom: 15px;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            background-color: #070a12;
+            color: #10b981; /* اللون الأخضر البرمجي لقراءة مريحة */
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            font-size: 16px;
+            line-height: 1.6;
+            resize: none;
+            box-sizing: border-box;
+            outline: none;
+            transition: border 0.3s ease;
+        }
+        textarea:focus {
+            border-color: var(--accent-color);
+        }
+        .status-bar {
+            margin-top: 15px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #6b7280;
+        }
+        .pulse {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background-color: #10b981;
+            border-radius: 50%;
+            margin-left: 5px;
+            box-shadow: 0 0 8px #10b981;
+        }
+    </style>
 </head>
 <body>
 
-    <h1>مستعرض نطق النصوص التلقائي</h1>
+<div class="container">
+    <h1>👑 منظومة seVen - القارئ التلقائي السيادي</h1>
     
-    <!-- مربع نص لكتابة ما تريد منطقه -->
-    <textarea id="textToSpeak" rows="4" cols="50">مرحباً بك، هذا النص سيتم نطقه بأفضل صوت متاح على جهازك الحالي.</textarea>
-    <br><br>
+    <!-- مربع النص المطور المزود بمستمع اللصق والتعديل الفوري -->
+    <textarea id="textToSpeak" placeholder="قم بلصق النص هنا.. وسيقوم النظام بنطقه فوراً وبصوت عالي دون ضغط أي زر..."></textarea>
     
-    <!-- زر لتشغيل الكود عند الضغط عليه -->
-    <button onclick="startSpeaking()">اضغط هنا للنطق</button>
+    <div class="status-bar">
+        <div>حالة المحرك: <span class="pulse"></span> جاهز وفي وضع الاستماع (Offline)</div>
+        <div>الهوية: seVen.AlArabClub777</div>
+    </div>
+</div>
 
-    <script>
-    function startSpeaking() {
-        // جلب النص المكتوب داخل المربع
-        const text = document.getElementById("textToSpeak").value;
+<script>
+const textarea = document.getElementById("textToSpeak");
 
-        if (!('speechSynthesis' in window)) {
-            alert("هذا المتصفح لا يدعم نطق الكلمات.");
-            return;
-        }
+// 🛠️ 1. مستمع الأحداث (Event Listener) لالتقاط عملية اللصق أو الكتابة الفورية
+textarea.addEventListener('paste', () => {
+    // ننتظر ميكرو-ثانية لضمان أن النص انتقل بالكامل داخل المربع قبل النطق
+    setTimeout(startSpeaking, 50);
+});
 
-        const voices = window.speechSynthesis.getVoices();
-        
-        // تصفية وترتيب الأصوات العربية بناءً على جودة نظام التشغيل
-        const arabicVoices = voices.filter(voice => voice.lang.startsWith('ar'))
-            .sort((a, b) => {
-                const priority = (name) => {
-                    name = name.toLowerCase();
-                    if (name.includes('premium') || name.includes('enhanced')) return 4;
-                    if (name.includes('apple') || name.includes('google')) return 3;
-                    if (name.includes('microsoft')) return 2;
-                    return 1;
-                };
-                return priority(b.name) - priority(a.name);
-            });
+textarea.addEventListener('input', (e) => {
+    // إذا قام المستخدم بإدخال نص جديد عبر سطر أوامر خارجي أو كتابة سريعة
+    if (e.inputType === 'insertFromPaste' || textarea.value.length > 10) {
+        startSpeaking();
+    }
+});
 
-        const utterance = new SpeechSynthesisUtterance(text);
+function startSpeaking() {
+    const text = textarea.value.trim();
+    
+    if (!text) return;
 
-        if (arabicVoices.length > 0) {
-            utterance.voice = arabicVoices[0]; // اختيار الصوت الأول (الأعلى أولوية)
-            utterance.lang = arabicVoices[0].lang;
-        } else {
-            utterance.lang = 'ar-SA'; // حل احتياطي في حال عدم التعرف
-        }
-
-        utterance.rate = 1.0;
-        utterance.pitch = 1.0;
-
-        window.speechSynthesis.speak(utterance);
+    if (!('speechSynthesis' in window)) {
+        alert("هذا المتصفح لا يدعم نطق الكلمات محلّياً.");
+        return;
     }
 
-    // تفعيل جلب الأصوات مسبقاً في متصفحات الكروم والأندرويد
-    if (typeof speechSynthesis !== 'undefined' && speechSynthesis.onvoiceschanged !== undefined) {
-        speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+    // إيقاف أي قراءة برمجية سابقة فوراً لمنع تداخل الأصوات
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    const voices = window.speechSynthesis.getVoices();
+
+    // تصفية وترتيب الأصوات العربية بناءً على جودة النظام المفضلة لديك (Apple ثم المطورين الآخرين)
+    const arabicVoices = voices.filter(voice => voice.lang.startsWith('ar'))
+        .sort((a, b) => {
+            const priority = (name) => {
+                name = name.toLowerCase();
+                if (name.includes('premium')) return 5;
+                if (name.includes('enhanced')) return 4;
+                if (name.includes('apple')) return 3;
+                if (name.includes('google')) return 2;
+                return 1;
+            };
+            return priority(b.name) - priority(a.name);
+        });
+
+    if (arabicVoices.length > 0) {
+        utterance.voice = arabicVoices[0]; // اختيار الصوت الأعلى جودة في الـ Mac تلقائياً
     }
-    </script>
+
+    // إعدادات سرعة وجودة النطق المتزنة
+    utterance.rate = 1.0; 
+    utterance.pitch = 1.0;
+
+    window.speechSynthesis.speak(utterance);
+}
+
+// تأمين تحميل الأصوات في المتصفحات التي تشحنها بشكل ديناميكي
+if (speechSynthesis.onvoiceschanged !== undefined) {
+    speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+}
+</script>
 
 </body>
 </html>
