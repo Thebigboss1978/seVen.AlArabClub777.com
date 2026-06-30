@@ -1,10 +1,13 @@
-sudo purge
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>seVen - مستعرض نطق النصوص التلقائي</title>
+    <title>🎚️7𓂈</title>
+    
+    <!-- أيقونة التبويب برقم 7 سيادي بسيط -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://w3.org viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22 fill=%22%23D4AF37%22 font-family=%22sans-serif%22 font-weight=%22bold%22>7</text></svg>">
+
     <style>
         :root {
             --bg-color: #0b0f19;
@@ -43,7 +46,7 @@ sudo purge
         }
         textarea {
             width: 100%;
-            height: 200px;
+            height: 150px;
             background-color: #070a12;
             color: #10b981; /* اللون الأخضر البرمجي لقراءة مريحة */
             border: 1px solid var(--border-color);
@@ -75,83 +78,206 @@ sudo purge
             margin-left: 5px;
             box-shadow: 0 0 8px #10b981;
         }
+        .pulse.active {
+            background-color: var(--accent-color);
+            box-shadow: 0 0 12px var(--accent-color);
+            animation: blink 0.3s infinite alternate;
+        }
+        @keyframes blink { from { opacity: 0.4; } to { opacity: 1; } }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>👑 منظومة seVen - القارئ التلقائي السيادي</h1>
+    <h1>👑 المجدول الزمني السيادي — seVen Resident Runtime</h1>
     
-    <!-- مربع النص المطور المزود بمستمع اللصق والتعديل الفوري -->
-    <textarea id="textToSpeak" placeholder="قم بلصق النص هنا.. وسيقوم النظام بنطقه فوراً وبصوت عالي دون ضغط أي زر..."></textarea>
+    <textarea id="textToSpeak" placeholder="تلقيم مستمر للـ Scheduler.. ليقوم بضبط الميزان الزمني والضخ المباشر عبر الـ Driver المعزول..."></textarea>
     
     <div class="status-bar">
-        <div>حالة المحرك: <span class="pulse"></span> جاهز وفي وضع الاستماع (Offline)</div>
-        <div>الهوية: seVen.AlArabClub777</div>
+        <div>حالة الـ Driver الموحد: <span id="engine-light" class="pulse"></span> <span id="engine-text">جاري تهيئة العقل الأساسي...</span></div>
+        <div>الهوية: Nexus.AlArabClub777</div>
     </div>
 </div>
 
 <script>
 const textarea = document.getElementById("textToSpeak");
+const engineLight = document.getElementById("engine-light");
+const engineText = document.getElementById("engine-text");
 
-// 🛠️ 1. مستمع الأحداث (Event Listener) لالتقاط عملية اللصق أو الكتابة الفورية
-textarea.addEventListener('paste', () => {
-    // ننتظر ميكرو-ثانية لضمان أن النص انتقل بالكامل داخل المربع قبل النطق
-    setTimeout(startSpeaking, 50);
-});
+// ==========================================
+// 🛡️ 1. الـ Voice Driver المجرّد (المالك الوحيد للحالة)
+// ==========================================
+const VoiceDriver = {
+    state: "IDLE", // الحالات الفاصلة المركزية: IDLE (خمول), BUSY (معالجة ونطق)
+    voices: [],
+    activeVoiceRef: null,
+    watchdogInterval: null,
+    lastActiveTime: Date.now(),
 
-textarea.addEventListener('input', (e) => {
-    // إذا قام المستخدم بإدخال نص جديد عبر سطر أوامر خارجي أو كتابة سريعة
-    if (e.inputType === 'insertFromPaste' || textarea.value.length > 10) {
-        startSpeaking();
+    // معامل روح الشخصية المتموجة (The Ghost Parameters) المستقرة عبر الأنظمة
+    character: {
+        baseRate: 1.00,
+        basePitch: 1.00,
+        varianceRate: 0.04,  // ميزان تموج السرعة العشوائي
+        variancePitch: 0.02  // ميزان تموج النبرة العشوائي
+    },
+
+    init() {
+        this.voices = window.speechSynthesis.getVoices() || [];
+        this.autoPickBestVoice();
+        this.refreshStateView("IDLE");
+        this.startSovereignWatchdog();
+    },
+
+    autoPickBestVoice() {
+        const arabicVoices = this.voices.filter(v => v.lang.startsWith('ar'))
+            .sort((a, b) => (b.name.includes('Premium') ? 1 : 0) - (a.name.includes('Premium') ? 1 : 0));
+        
+        if (arabicVoices.length > 0) {
+            this.activeVoiceRef = arabicVoices[0];
+        }
+    },
+
+    // الـ Utterance معزول ومخفي تماماً كـ Packet عابرة تنشأ وتموت داخل الـ Driver فقط
+    executePacketDelivery(cleanPulseText, onPacketEnd) {
+        this.state = "BUSY";
+        this.lastActiveTime = Date.now();
+        this.refreshStateView("BUSY");
+
+        let packet = new SpeechSynthesisUtterance(cleanPulseText);
+        if (this.activeVoiceRef) packet.voice = this.activeVoiceRef;
+
+        // توليد الروح البشرية على مستوى الـ Packet الزمنية دون المساس بنوع الصوت الخام
+        packet.rate = +(this.character.baseRate + (Math.random() * this.character.varianceRate * 2 - this.character.varianceRate)).toFixed(2);
+        packet.pitch = +(this.character.basePitch + (Math.random() * this.character.variancePitch * 2 - this.character.variancePitch)).toFixed(2);
+
+        // نحر فوري للأثر النصي في ممر المعالجة (Anti-Sniffing)
+        cleanPulseText = null;
+
+        packet.onend = () => {
+            packet = null;
+            this.lastActiveTime = Date.now();
+            onPacketEnd(); // إشعار المجدول لسحب الشحنة القادمة تلقائياً بشكل طبيعي
+        };
+
+        packet.onerror = () => {
+            packet = null;
+            onPacketEnd();
+        };
+
+        window.speechSynthesis.speak(packet);
+    },
+
+    // المقاطعة السيادية: معزولة عن خط الإنتاج الطبيعي ولا تُستدعى روتينياً لمنع تجميد الماك
+    sovereignInterruption() {
+        window.speechSynthesis.cancel();
+        this.state = "IDLE";
+        this.refreshStateView("IDLE");
+    },
+
+    startSovereignWatchdog() {
+        clearInterval(this.watchdogInterval);
+        this.watchdogInterval = setInterval(() => {
+            // الحارس يسأل حالة الـ Driver الفعالة والموحدة فقط وليس المتصفح
+            if (this.state === "BUSY" && (Date.now() - this.lastActiveTime > 3500)) {
+                console.warn("🚨 الحارس رصد قفل حديدي في العتاد الخارجي. دفع هيدروليكي طارئ...");
+                this.sovereignInterruption();
+                Scheduler.consumeBufferTimeline(); // إجبار المجدول على إكمال المهمة
+            }
+        }, 2000);
+    },
+
+    refreshStateView(currentState) {
+        if (currentState === "BUSY") {
+            if (engineLight) engineLight.className = "pulse active";
+            if (engineText) engineText.innerText = "ضخ متزامن عازل وحرق فوري للذاكرة الحية...";
+        } else {
+            const name = this.activeVoiceRef ? this.activeVoiceRef.name : "Local Engine";
+            if (engineLight) engineLight.className = "pulse";
+            if (engineText) engineText.innerText = `مقيم ومستقر على روح المحرك الحالي: [${name}]`;
+        }
     }
-});
+};
 
-function startSpeaking() {
-    const text = textarea.value.trim();
-    
-    if (!text) return;
+// ==========================================
+// 🧠 2. طبقة الـ Scheduler: إدارة البناء والميزان الزمني الصافي
+// ==========================================
+const Scheduler = {
+    wordBufferQueue: [],
 
-    if (!('speechSynthesis' in window)) {
-        alert("هذا المتصفح لا يدعم نطق الكلمات محلّياً.");
-        return;
-    }
+    feed(rawInput) {
+        if (!rawInput) return;
 
-    // إيقاف أي قراءة برمجية سابقة فوراً لمنع تداخل الأصوات
-    window.speechSynthesis.cancel();
+        // نحر النص فور وصوله وتطهير الواجهة تماماً
+        const words = rawInput.split(/\s+/).filter(w => w.length > 0);
+        textarea.value = ""; 
 
-    const utterance = new SpeechSynthesisUtterance(text);
-    const voices = window.speechSynthesis.getVoices();
+        this.wordBufferQueue.push(...words);
+        
+        // التلقيم الفوري: إذا كان الـ Driver خامل، نبدأ الضخ
+        if (VoiceDriver.state === "IDLE") {
+            this.consumeBufferTimeline();
+        }
+    },
 
-    // تصفية وترتيب الأصوات العربية بناءً على جودة النظام المفضلة لديك (Apple ثم المطورين الآخرين)
-    const arabicVoices = voices.filter(voice => voice.lang.startsWith('ar'))
-        .sort((a, b) => {
-            const priority = (name) => {
-                name = name.toLowerCase();
-                if (name.includes('premium')) return 5;
-                if (name.includes('enhanced')) return 4;
-                if (name.includes('apple')) return 3;
-                if (name.includes('google')) return 2;
-                return 1;
-            };
-            return priority(b.name) - priority(a.name);
+    consumeBufferTimeline() {
+        if (this.wordBufferQueue.length === 0) {
+            VoiceDriver.state = "IDLE";
+            VoiceDriver.refreshStateView("IDLE");
+            if (window.gc) window.gc();
+            return;
+        }
+
+        let currentPulseWords = [];
+        let estimatedPulseDuration = 0;
+        
+        const MS_PER_WORD = 120; 
+        const MIN_DURATION = 350; 
+        const MAX_DURATION = 750; // سقف النبضة الزمنية المستقر (300-800ms)
+
+        while (this.wordBufferQueue.length > 0) {
+            let nextWord = this.wordBufferQueue[0];
+            let wordDuration = nextWord.length * 25 + MS_PER_WORD;
+
+            if (estimatedPulseDuration + wordDuration > MAX_DURATION && currentPulseWords.length > 0) {
+                break; 
+            }
+
+            currentPulseWords.push(this.wordBufferQueue.shift());
+            estimatedPulseDuration += wordDuration;
+
+            if (estimatedPulseDuration >= MIN_DURATION) break;
+        }
+
+        const cleanPulseText = currentPulseWords.join(" ");
+        currentPulseWords = null;
+
+        // تمرير الكتلة للـ Driver والتحكم من خلال الـ Callback الصافي دون علم المجدول بـ WebSpeech
+        VoiceDriver.executePacketDelivery(cleanPulseText, () => {
+            this.consumeBufferTimeline();
         });
+    },
 
-    if (arabicVoices.length > 0) {
-        utterance.voice = arabicVoices[0]; // اختيار الصوت الأعلى جودة في الـ Mac تلقائياً
+    hardReset() {
+        this.wordBufferQueue = [];
+        VoiceDriver.sovereignInterruption();
     }
+};
 
-    // إعدادات سرعة وجودة النطق المتزنة
-    utterance.rate = 1.0; 
-    utterance.pitch = 1.0;
+// ==========================================
+// 🛠️ 3. ربط أحداث واجهة التحكم الصامتة
+// ==========================================
+textarea.addEventListener('paste', () => setTimeout(() => Scheduler.feed(textarea.value.trim()), 50));
+textarea.addEventListener('input', (e) => {
+    if (e.inputType === 'insertFromPaste' || textarea.value.trim().length > 10) {
+        Scheduler.feed(textarea.value.trim());
+    }
+});
 
-    window.speechSynthesis.speak(utterance);
+if (window.speechSynthesis.onvoiceschanged !== undefined) {
+    window.speechSynthesis.onvoiceschanged = () => VoiceDriver.init();
 }
-
-// تأمين تحميل الأصوات في المتصفحات التي تشحنها بشكل ديناميكي
-if (speechSynthesis.onvoiceschanged !== undefined) {
-    speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
-}
+VoiceDriver.init();
 </script>
 
 </body>
